@@ -1,6 +1,6 @@
 // tracking.js
 // Smart Courier Redirector for Pakistani Couriers
-// Version: 2.1 (Fixed Trax redirect and improved detection)
+// Version: 2.2 (Fixed Trax vs PostEx detection priority)
 
 // ==========================================
 // COURIER DATABASE
@@ -14,6 +14,30 @@
 
 const COURIER_RULES = [
     // ========== MAJOR PAKISTANI COURIERS ==========
+    {
+        name: "Trax",
+        patterns: [
+            /^20\d{10,}$/,              // 20-prefix with 11+ digits total (e.g., 20223861285076)
+            /^\d{7,12}$/,               // 7-12 digit numeric (common format)
+            /^TRAX/i,                   // Contains TRAX
+            /^TRX/i                     // Contains TRX
+        ],
+        url: (id) => `https://trax.pk/tracking/${encodeURIComponent(id)}`,
+        fallbackUrl: "https://trax.pk/tracking",
+        description: "7-12 digit numeric or 20-prefix IDs (e.g., 20223861285076)"
+    },
+    {
+        name: "PostEx",
+        patterns: [
+            /^22\d{6,}$/,               // Starts with 22 + digits (specific PostEx format)
+            /^POSTEX/i,                 // Contains POSTEX
+            /^PEX\d{6,}$/i              // PEX + digits
+            // Removed generic /^\d{10,}$/ pattern to avoid conflicts with Trax
+        ],
+        url: (id) => `https://postex.pk/tracking/${encodeURIComponent(id)}`,
+        fallbackUrl: "https://postex.pk/tracking",
+        description: "22-prefix IDs or PEX format"
+    },
     {
         name: "Leopard Courier",
         patterns: [
@@ -37,30 +61,6 @@ const COURIER_RULES = [
         url: (id) => `https://www.tcsexpress.com/track/${encodeURIComponent(id)}`,
         fallbackUrl: "https://www.tcsexpress.com/track/",
         description: "10-12 digit numeric, or EX/CN prefix"
-    },
-    {
-        name: "PostEx",
-        patterns: [
-            /^22\d{6,}$/,               // Starts with 22 + digits
-            /^POSTEX/i,                 // Contains POSTEX
-            /^\d{10,}$/,                // 10+ digits numeric
-            /^PEX\d{6,}$/i              // PEX + digits
-        ],
-        url: (id) => `https://postex.pk/tracking/${encodeURIComponent(id)}`,
-        fallbackUrl: "https://postex.pk/tracking",
-        description: "22-prefix IDs or numeric 10+ digits"
-    },
-    {
-        name: "Trax",
-        patterns: [
-            /^\d{7,12}$/,               // 7-12 digit numeric (common format)
-            /^TRAX/i,                   // Contains TRAX
-            /^TRX/i,                    // Contains TRX
-            /^20\d{9,}$/                // 20-prefix numeric IDs (like 20223861285076)
-        ],
-        url: (id) => `https://trax.pk/tracking/${encodeURIComponent(id)}`,
-        fallbackUrl: "https://trax.pk/tracking",
-        description: "7-12 digit numeric tracking number or 20-prefix IDs"
     },
     {
         name: "Call Courier",
@@ -243,7 +243,9 @@ function detectCourier(trackingId) {
     // Clean and normalize the tracking ID
     const cleanId = trackingId.toString().trim().toUpperCase();
     
-    // First pass: Try to match specific patterns
+    console.log(`[Detection] Checking ID: ${cleanId}`);
+    
+    // First pass: Try to match specific patterns (order matters - more specific first)
     for (const courier of COURIER_RULES) {
         for (const pattern of courier.patterns) {
             if (pattern.test(cleanId)) {
