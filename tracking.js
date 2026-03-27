@@ -1,6 +1,6 @@
 // tracking.js
 // Smart Courier Redirector for Pakistani Couriers
-// Version: 2.0 (Updated with comprehensive carrier list)
+// Version: 2.1 (Fixed Trax redirect and improved detection)
 
 // ==========================================
 // COURIER DATABASE
@@ -55,11 +55,12 @@ const COURIER_RULES = [
         patterns: [
             /^\d{7,12}$/,               // 7-12 digit numeric (common format)
             /^TRAX/i,                   // Contains TRAX
-            /^TRX/i                     // Contains TRX
+            /^TRX/i,                    // Contains TRX
+            /^20\d{9,}$/                // 20-prefix numeric IDs (like 20223861285076)
         ],
         url: (id) => `https://trax.pk/tracking/${encodeURIComponent(id)}`,
         fallbackUrl: "https://trax.pk/tracking",
-        description: "7-12 digit numeric tracking number"
+        description: "7-12 digit numeric tracking number or 20-prefix IDs"
     },
     {
         name: "Call Courier",
@@ -132,8 +133,7 @@ const COURIER_RULES = [
 
     // ========== SPECIALIZED/REGIONAL ==========
     {
-        name: "Rider (by ZO)"
-    ,
+        name: "Rider (by ZO)",
         patterns: [
             /^RIDER/i,                  // Contains RIDER
             /^ZORIDER/i,                // ZORIDER prefix
@@ -253,11 +253,10 @@ function detectCourier(trackingId) {
         }
     }
     
-    // Second pass: Check for partial matches or common patterns
-    // Numeric-only tracking (default fallback)
-    if (/^\d{8,}$/.test(cleanId)) {
-        console.log(`[Detection] Numeric ID detected, using generic redirect`);
-        return null; // Will show manual selection
+    // Second pass: Check for numeric-only tracking (fallback to manual selection)
+    if (/^\d{7,}$/.test(cleanId)) {
+        console.log(`[Detection] Numeric ID detected, showing manual selection`);
+        return null;
     }
     
     return null; // No match found
@@ -292,9 +291,7 @@ function showManualSelection(trackingId) {
     const couriersHtml = COURIER_RULES.map(courier => `
         <button onclick="manualRedirect('${courier.name.replace(/'/g, "\\'")}', '${trackingId}')" 
                 class="courier-btn"
-                style="margin:8px; padding:10px 16px; background:#4a5568; border:none; border-radius:8px; color:white; cursor:pointer; font-size:14px; transition:all 0.2s;"
-                onmouseover="this.style.background='#2d3748'"
-                onmouseout="this.style.background='#4a5568'">
+                style="margin:8px; padding:10px 16px; background:#4a5568; border:none; border-radius:8px; color:white; cursor:pointer; font-size:14px; transition:all 0.2s;">
             ${courier.name}
         </button>
     `).join('');
@@ -302,13 +299,24 @@ function showManualSelection(trackingId) {
     messageElement.innerHTML = `
         <div style="background:#2d3748; padding:20px; border-radius:12px; max-width:500px; margin:0 auto;">
             <p style="margin:0 0 10px 0;">⚠️ Could not automatically detect courier for:</p>
-            <p style="font-size:18px; font-weight:bold; margin:10px 0; word-break:break-all;">${trackingId}</p>
+            <p style="font-size:18px; font-weight:bold; margin:10px 0; word-break:break-all;">${escapeHtml(trackingId)}</p>
             <p style="margin:15px 0 10px 0;">Please select your courier:</p>
             <div style="display:flex; flex-wrap:wrap; justify-content:center; gap:5px;">
                 ${couriersHtml}
             </div>
         </div>
     `;
+}
+
+// Simple escape function to prevent XSS
+function escapeHtml(str) {
+    if (!str) return '';
+    return str.replace(/[&<>]/g, function(m) {
+        if (m === '&') return '&amp;';
+        if (m === '<') return '&lt;';
+        if (m === '>') return '&gt;';
+        return m;
+    });
 }
 
 // Show error message
@@ -320,7 +328,7 @@ function showError(message) {
     
     messageElement.innerHTML = `
         <div style="background:#c53030; padding:20px; border-radius:12px; max-width:500px; margin:0 auto;">
-            <p style="margin:0;">❌ ${message}</p>
+            <p style="margin:0;">❌ ${escapeHtml(message)}</p>
             <p style="margin:15px 0 0 0; font-size:14px;">
                 Please contact the sender for assistance.
             </p>
@@ -335,8 +343,8 @@ function showLoadingAndRedirect(courier, trackingId) {
     
     if (courier) {
         messageElement.innerHTML = `
-            ✅ Detected: <strong>${courier.name}</strong><br>
-            Tracking ID: ${trackingId}<br>
+            ✅ Detected: <strong>${escapeHtml(courier.name)}</strong><br>
+            Tracking ID: ${escapeHtml(trackingId)}<br>
             Redirecting to tracking page...
         `;
         
@@ -347,7 +355,7 @@ function showLoadingAndRedirect(courier, trackingId) {
             window.location.href = trackingUrl;
         }, 1500);
     } else {
-        // Fallback for numeric IDs - show manual selection
+        // Show manual selection
         showManualSelection(trackingId);
     }
 }
@@ -363,7 +371,7 @@ window.manualRedirect = function(courierName, trackingId) {
         const trackingUrl = buildTrackingUrl(courier, trackingId);
         window.location.href = trackingUrl;
     } else {
-        showError(`Courier "${courierName}" not found in database.`);
+        showError(`Courier "${escapeHtml(courierName)}" not found in database.`);
     }
 };
 
