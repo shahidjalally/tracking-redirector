@@ -22,8 +22,8 @@ const COURIER_RULES = [
             /^TRAX/i,                   // Contains TRAX
             /^TRX/i                     // Contains TRX
         ],
-        url: (id) => `https://trax.pk/tracking/${encodeURIComponent(id)}`,
-        fallbackUrl: "https://trax.pk/tracking",
+        url: (id) => `https://sonic.pk/tracking?tracking_number=${encodeURIComponent(id)}`,
+        fallbackUrl: "https://sonic.pk/tracking?tracking_number=",
         description: "7-12 digit numeric or 20-prefix IDs (e.g., 20223861285076)"
     },
     {
