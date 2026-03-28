@@ -46,8 +46,8 @@ const COURIER_RULES = [
             /^LEOPARD/i,                // Contains LEOPARD
             /^\d{8,12}$/               // Some numeric IDs (8-12 digits)
         ],
-        url: (id) => `https://www.leopardscourier.com/shipment_tracking_view?cn_number=${encodeURIComponent(id)}`,
-        fallbackUrl: "https://www.leopardscourier.com/",
+        url: (id) => `https://www.leopardscourier.com/tracking?cn_number=${encodeURIComponent(id)}`,
+        fallbackUrl: "https://www.leopardscourier.com/tracking",
         description: "Two-letter city code prefix (KI=Karachi, LH=Lahore, IS=Islamabad, etc.) followed by 6+ digits"
     },
     {
