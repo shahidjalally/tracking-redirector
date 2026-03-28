@@ -23,7 +23,7 @@ const COURIER_RULES = [
             /^TRX/i                     // Contains TRX
         ],
         url: (id) => `https://sonic.pk/tracking?tracking_number=${encodeURIComponent(id)}`,
-        fallbackUrl: "https://sonic.pk/tracking?tracking_number=",
+        fallbackUrl: "https://sonic.pk/tracking",
         description: "7-12 digit numeric or 20-prefix IDs (e.g., 20223861285076)"
     },
     {
@@ -34,7 +34,7 @@ const COURIER_RULES = [
             /^PEX\d{6,}$/i              // PEX + digits
             // Removed generic /^\d{10,}$/ pattern to avoid conflicts with Trax
         ],
-        url: (id) => `https://postex.pk/tracking/${encodeURIComponent(id)}`,
+        url: (id) => `https://postex.pk/tracking?cn=${encodeURIComponent(id)}`,
         fallbackUrl: "https://postex.pk/tracking",
         description: "22-prefix IDs or PEX format"
     },
