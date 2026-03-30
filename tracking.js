@@ -259,6 +259,20 @@ function getAllCouriers() {
     return COURIER_RULES;
 }
 
+function getTrackingIdFromQuery() {
+    const params = new URLSearchParams(window.location.search);
+    const keys = ['trackingId', 'trackingid', 'tracking_id', 'id', 'cn', 'awb', 'waybill'];
+
+    for (const key of keys) {
+        const value = params.get(key);
+        if (value && value.trim()) {
+            return value.trim();
+        }
+    }
+
+    return '';
+}
+
 // Build tracking URL for a courier
 function buildTrackingUrl(courier, trackingId) {
     try {
@@ -277,25 +291,19 @@ function buildTrackingUrl(courier, trackingId) {
 function showManualSelection(trackingId) {
     const messageElement = document.getElementById('message');
     const spinnerElement = document.querySelector('.spinner');
-    
+
     if (spinnerElement) spinnerElement.style.display = 'none';
-    
+
     const couriersHtml = COURIER_RULES.map(courier => `
-        <button onclick="manualRedirect('${courier.name.replace(/'/g, "\\'")}', '${trackingId}')" 
-                class="courier-btn"
-                style="margin:8px; padding:10px 16px; background:#4a5568; border:none; border-radius:8px; color:white; cursor:pointer; font-size:14px; transition:all 0.2s;">
-            ${courier.name}
-        </button>
+        <button onclick="manualRedirect('${courier.name.replace(/'/g, "\\'")}', '${trackingId}')" class="courier-btn">${courier.name}</button>
     `).join('');
-    
+
     messageElement.innerHTML = `
-        <div style="background:#2d3748; padding:20px; border-radius:12px; max-width:500px; margin:0 auto;">
-            <p style="margin:0 0 10px 0;">⚠️ Could not automatically detect courier for:</p>
-            <p style="font-size:18px; font-weight:bold; margin:10px 0; word-break:break-all;">${escapeHtml(trackingId)}</p>
-            <p style="margin:15px 0 10px 0;">Please select your courier:</p>
-            <div style="display:flex; flex-wrap:wrap; justify-content:center; gap:5px;">
-                ${couriersHtml}
-            </div>
+        <div class="manual-selection">
+            <p style="margin:0 0 8px 0;">⚠️ Could not automatically detect courier for:</p>
+            <p style="font-size:18px; font-weight:bold; margin:8px 0; word-break:break-all;">${escapeHtml(trackingId)}</p>
+            <p style="margin:12px 0 4px 0;">Please select your courier:</p>
+            <div class="courier-grid">${couriersHtml}</div>
         </div>
     `;
 }
@@ -315,15 +323,13 @@ function escapeHtml(str) {
 function showError(message) {
     const messageElement = document.getElementById('message');
     const spinnerElement = document.querySelector('.spinner');
-    
+
     if (spinnerElement) spinnerElement.style.display = 'none';
-    
+
     messageElement.innerHTML = `
-        <div style="background:#c53030; padding:20px; border-radius:12px; max-width:500px; margin:0 auto;">
+        <div class="error-message">
             <p style="margin:0;">❌ ${escapeHtml(message)}</p>
-            <p style="margin:15px 0 0 0; font-size:14px;">
-                Please contact the sender for assistance.
-            </p>
+            <p style="margin:10px 0 0 0; font-size:14px;">Please contact the sender for assistance.</p>
         </div>
     `;
 }
@@ -383,20 +389,31 @@ window.addEventListener('DOMContentLoaded', () => {
 
     if (spinnerElement) spinnerElement.style.display = 'none';
 
-    formElement.addEventListener('submit', (event) => {
-        event.preventDefault();
+    const processTrackingId = (trackingId) => {
+        const cleanId = trackingId.trim();
 
-        const trackingId = inputElement.value.trim();
-
-        if (!trackingId) {
+        if (!cleanId) {
             showError('Please enter a valid tracking ID.');
             return;
         }
 
-        console.log(`[Tracking] Processing ID: ${trackingId}`);
-        const courier = detectCourier(trackingId);
-        showLoadingAndRedirect(courier, trackingId);
+        console.log(`[Tracking] Processing ID: ${cleanId}`);
+        const courier = detectCourier(cleanId);
+        showLoadingAndRedirect(courier, cleanId);
+    };
+
+    formElement.addEventListener('submit', (event) => {
+        event.preventDefault();
+        processTrackingId(inputElement.value);
     });
+
+    const queryTrackingId = getTrackingIdFromQuery();
+
+    if (queryTrackingId) {
+        inputElement.value = queryTrackingId;
+        messageElement.innerHTML = '<div class="notice">Tracking ID detected from URL. Redirecting…</div>';
+        processTrackingId(queryTrackingId);
+    }
 });
 
 // Export for testing (if in Node.js environment)
