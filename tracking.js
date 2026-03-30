@@ -228,16 +228,6 @@ const COURIER_RULES = [
 // CORE FUNCTIONS
 // ==========================================
 
-// Get tracking ID from URL parameters
-function getTrackingId() {
-    const urlParams = new URLSearchParams(window.location.search);
-    // Support multiple parameter names
-    return urlParams.get('id') || 
-           urlParams.get('tracking') || 
-           urlParams.get('tracking_id') || 
-           urlParams.get('ref');
-}
-
 // Detect courier based on tracking ID with priority matching
 function detectCourier(trackingId) {
     // Clean and normalize the tracking ID
@@ -343,6 +333,8 @@ function showLoadingAndRedirect(courier, trackingId) {
     const messageElement = document.getElementById('message');
     const spinnerElement = document.querySelector('.spinner');
     
+    if (spinnerElement) spinnerElement.style.display = 'block';
+    
     if (courier) {
         messageElement.innerHTML = `
             ✅ Detected: <strong>${escapeHtml(courier.name)}</strong><br>
@@ -379,20 +371,35 @@ window.manualRedirect = function(courierName, trackingId) {
 
 // Start the redirect process when page loads
 window.addEventListener('DOMContentLoaded', () => {
-    const trackingId = getTrackingId();
-    
-    if (!trackingId) {
-        showError('No tracking ID provided. Please check your link and try again.');
+    const formElement = document.getElementById('tracking-form');
+    const inputElement = document.getElementById('tracking-id');
+    const messageElement = document.getElementById('message');
+    const spinnerElement = document.querySelector('.spinner');
+
+    if (!formElement || !inputElement || !messageElement) {
+        console.error('[Tracking] Required form elements are missing.');
         return;
     }
-    
-    console.log(`[Tracking] Processing ID: ${trackingId}`);
-    
-    const courier = detectCourier(trackingId);
-    showLoadingAndRedirect(courier, trackingId);
+
+    if (spinnerElement) spinnerElement.style.display = 'none';
+
+    formElement.addEventListener('submit', (event) => {
+        event.preventDefault();
+
+        const trackingId = inputElement.value.trim();
+
+        if (!trackingId) {
+            showError('Please enter a valid tracking ID.');
+            return;
+        }
+
+        console.log(`[Tracking] Processing ID: ${trackingId}`);
+        const courier = detectCourier(trackingId);
+        showLoadingAndRedirect(courier, trackingId);
+    });
 });
 
 // Export for testing (if in Node.js environment)
 if (typeof module !== 'undefined' && module.exports) {
-    module.exports = { COURIER_RULES, detectCourier, getTrackingId };
+    module.exports = { COURIER_RULES, detectCourier };
 }
