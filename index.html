@@ -5,94 +5,213 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Track Your Shipment</title>
     <style>
+        :root {
+            --bg-start: #667eea;
+            --bg-end: #764ba2;
+            --card-bg: rgba(255, 255, 255, 0.08);
+            --card-border: rgba(255, 255, 255, 0.22);
+            --text: #ffffff;
+            --muted: rgba(255, 255, 255, 0.85);
+            --button: #111827;
+            --button-hover: #0f172a;
+            --error-bg: #c53030;
+        }
+
+        * { box-sizing: border-box; }
+
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif;
+            margin: 0;
+            min-height: 100vh;
             display: flex;
             justify-content: center;
             align-items: center;
-            min-height: 100vh;
-            margin: 0;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
             padding: 1rem;
-            box-sizing: border-box;
+            background: linear-gradient(135deg, var(--bg-start) 0%, var(--bg-end) 100%);
+            color: var(--text);
         }
+
         .container {
-            text-align: center;
-            padding: 2rem;
             width: 100%;
-            max-width: 620px;
+            max-width: 680px;
+            margin: 0 auto;
+            text-align: center;
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 18px;
+            backdrop-filter: blur(8px);
+            padding: 1.5rem;
+            box-shadow: 0 20px 40px rgba(10, 16, 36, 0.22);
         }
+
+        h2 {
+            margin: 0;
+            font-size: clamp(1.5rem, 3.2vw, 2rem);
+        }
+
+        .subheading {
+            margin: 0.8rem 0 1.2rem;
+            color: var(--muted);
+            font-size: clamp(0.96rem, 2.1vw, 1.1rem);
+        }
+
         .tracker-form {
             display: flex;
             gap: 10px;
-            margin: 1.2rem auto 0.8rem;
-            max-width: 540px;
+            margin: 0 auto;
+            width: 100%;
         }
+
         .tracker-form input {
             flex: 1;
             min-width: 0;
             padding: 12px 14px;
-            border: 1px solid rgba(255,255,255,0.35);
+            border: 1px solid rgba(255,255,255,0.4);
             border-radius: 10px;
-            background: rgba(255,255,255,0.16);
-            color: #fff;
-            font-size: 15px;
+            background: rgba(255,255,255,0.14);
+            color: var(--text);
+            font-size: 1rem;
             outline: none;
         }
-        .tracker-form input::placeholder {
-            color: rgba(255,255,255,0.8);
+
+        .tracker-form input:focus {
+            border-color: rgba(255,255,255,0.75);
+            box-shadow: 0 0 0 3px rgba(255,255,255,0.2);
         }
+
+        .tracker-form input::placeholder { color: rgba(255,255,255,0.82); }
+
         .tracker-form button {
             border: none;
             border-radius: 10px;
-            background: #1f2937;
-            color: #fff;
+            background: var(--button);
+            color: var(--text);
             padding: 12px 18px;
-            font-size: 15px;
-            font-weight: 600;
+            font-size: 1rem;
+            font-weight: 700;
             cursor: pointer;
-            transition: transform 0.15s ease, opacity 0.15s ease;
+            transition: transform 0.15s ease, background-color 0.15s ease;
+            white-space: nowrap;
         }
+
         .tracker-form button:hover {
             transform: translateY(-1px);
-            opacity: 0.95;
+            background: var(--button-hover);
         }
+
         .spinner {
             border: 4px solid rgba(255,255,255,0.3);
             border-radius: 50%;
             border-top: 4px solid white;
-            width: 40px;
-            height: 40px;
+            width: 36px;
+            height: 36px;
             animation: spin 1s linear infinite;
-            margin: 20px auto;
+            margin: 1rem auto;
             display: none;
         }
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
+
+        #message {
+            margin: 0.8rem 0 0;
+            min-height: 1.5rem;
+            color: var(--muted);
+            line-height: 1.5;
+            word-break: break-word;
         }
-        .powered-by {
-            margin-top: 1.2rem;
-            background: rgba(15, 23, 42, 0.35);
-            border: 1px solid rgba(255,255,255,0.2);
+
+        .notice,
+        .error-message,
+        .manual-selection {
+            max-width: 100%;
+            margin: 0.8rem auto 0;
             border-radius: 12px;
             padding: 14px;
-            line-height: 1.6;
-            font-size: 14px;
             text-align: left;
         }
+
+        .notice {
+            background: rgba(15, 23, 42, 0.3);
+            border: 1px solid rgba(255,255,255,0.2);
+            color: #f8fafc;
+        }
+
+        .error-message {
+            background: var(--error-bg);
+            color: #fff;
+        }
+
+        .manual-selection {
+            background: rgba(15, 23, 42, 0.45);
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+
+        .courier-grid {
+            margin-top: 0.8rem;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            justify-content: center;
+        }
+
+        .courier-btn {
+            margin: 0;
+            padding: 10px 14px;
+            background: #334155;
+            border: 1px solid rgba(255,255,255,0.25);
+            border-radius: 8px;
+            color: white;
+            cursor: pointer;
+            font-size: 0.93rem;
+        }
+
+        .powered-by {
+            margin-top: 1rem;
+            background: rgba(10, 16, 36, 0.34);
+            border: 1px solid rgba(255,255,255,0.24);
+            border-radius: 12px;
+            padding: 14px;
+            line-height: 1.55;
+            font-size: 0.95rem;
+            text-align: left;
+        }
+
+        .powered-by p { margin: 0.45rem 0; }
+
+        .powered-by strong {
+            display: inline-block;
+            margin-bottom: 0.15rem;
+        }
+
         a {
             color: #fff;
             text-decoration: underline;
             font-weight: 600;
         }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
         @media (max-width: 640px) {
+            body {
+                align-items: flex-start;
+                padding: 0.8rem;
+            }
+
+            .container {
+                padding: 1.1rem;
+                border-radius: 14px;
+            }
+
             .tracker-form {
                 flex-direction: column;
             }
-            .tracker-form button {
-                width: 100%;
+
+            .tracker-form button { width: 100%; }
+
+            .powered-by {
+                font-size: 0.9rem;
+                line-height: 1.5;
             }
         }
     </style>
@@ -100,22 +219,20 @@
 <body>
     <div class="container">
         <h2>📦 Track Your Shipment</h2>
-        <p>Enter your tracking number and submit to find the right courier.</p>
+        <p class="subheading">Enter your tracking number and submit to find the right courier.</p>
 
         <form id="tracking-form" class="tracker-form">
-            <input id="tracking-id" name="trackingId" type="text" autocomplete="off" required placeholder="Enter tracking ID">
+            <input id="tracking-id" name="trackingId" type="text" autocomplete="off" placeholder="Enter tracking ID">
             <button type="submit">Track Now</button>
         </form>
 
-        <div class="spinner"></div>
-        <p id="message">Please enter your tracking number above.</p>
+        <div class="spinner" aria-hidden="true"></div>
+        <div id="message" role="status" aria-live="polite">Paste a tracking number above, or open this page with <code>?trackingId=...</code>.</div>
 
         <div class="powered-by">
-            <strong>Powered by:</strong>
-            <a href="https://notify.srlines.net" target="_blank" rel="noopener noreferrer">Transactional Notifier Shopify App | SRLINES WhatsApp Integration Addon for WooCommerce</a>.
-            <br>
-            These are products of <strong>SRLINES SOFTWARE HOUSE (SMC-PRIVATE) LIMITED</strong>.
-            Visit the product page at <a href="https://notify.srlines.net" target="_blank" rel="noopener noreferrer">notify.srlines.net</a> and company website at <a href="https://srlines.net" target="_blank" rel="noopener noreferrer">srlines.net</a>.
+            <p><strong>Powered by:</strong> <a href="https://notify.srlines.net" target="_blank" rel="noopener noreferrer">Transactional Notifier Shopify App</a> and <a href="https://notify.srlines.net" target="_blank" rel="noopener noreferrer">SRLINES WhatsApp Integration Addon for WooCommerce</a>.</p>
+            <p>These are products of <strong>SRLINES SOFTWARE HOUSE (SMC-PRIVATE) LIMITED</strong>.</p>
+            <p>Visit <a href="https://notify.srlines.net" target="_blank" rel="noopener noreferrer">notify.srlines.net</a> and <a href="https://srlines.net" target="_blank" rel="noopener noreferrer">srlines.net</a>.</p>
         </div>
     </div>
 
