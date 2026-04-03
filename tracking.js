@@ -1,6 +1,6 @@
 // tracking.js
 // Smart Courier Redirector for Pakistani Couriers
-// Version: 2.4 (Added PostEx support for 23/27-prefix tracking IDs)
+// Version: 2.5 (Normalized IDs + stronger PostEx detection diagnostics)
 
 // ==========================================
 // COURIER DATABASE
@@ -15,18 +15,6 @@
 const COURIER_RULES = [
     // ========== MAJOR PAKISTANI COURIERS ==========
     {
-        name: "Trax",
-        patterns: [
-            /^20\d{10,}$/,              // 20-prefix with 11+ digits total (e.g., 20223861285076)
-            /^\d{7,12}$/,               // 7-12 digit numeric (common format)
-            /^TRAX/i,                   // Contains TRAX
-            /^TRX/i                     // Contains TRX
-        ],
-        url: (id) => `https://sonic.pk/tracking?tracking_number=${encodeURIComponent(id)}`,
-        fallbackUrl: "https://sonic.pk/tracking",
-        description: "7-12 digit numeric or 20-prefix IDs (e.g., 20223861285076)"
-    },
-    {
         name: "PostEx",
         patterns: [
             /^22\d{6,}$/,               // Starts with 22 + digits (specific PostEx format)
@@ -39,6 +27,18 @@ const COURIER_RULES = [
         url: (id) => `https://postex.pk/tracking?cn=${encodeURIComponent(id)}`,
         fallbackUrl: "https://postex.pk/tracking",
         description: "22/23/27-prefix IDs or PEX format"
+    },
+    {
+        name: "Trax",
+        patterns: [
+            /^20\d{10,}$/,              // 20-prefix with 11+ digits total (e.g., 20223861285076)
+            /^(?!22|23|27)\d{7,12}$/,      // 7-12 digit numeric (excluding PostEx prefixes)
+            /^TRAX/i,                   // Contains TRAX
+            /^TRX/i                     // Contains TRX
+        ],
+        url: (id) => `https://sonic.pk/tracking?tracking_number=${encodeURIComponent(id)}`,
+        fallbackUrl: "https://sonic.pk/tracking",
+        description: "7-12 digit numeric (excluding 22/23/27 prefixes) or 20-prefix IDs"
     },
     {
         name: "Leopard Courier",
@@ -230,10 +230,21 @@ const COURIER_RULES = [
 // CORE FUNCTIONS
 // ==========================================
 
+
+function normalizeTrackingId(trackingId) {
+    if (trackingId === null || trackingId === undefined) return '';
+    return trackingId
+        .toString()
+        .trim()
+        .toUpperCase()
+        .replace(/[\s\-_]+/g, '')
+        .replace(/[^A-Z0-9&]/g, '');
+}
+
 // Detect courier based on tracking ID with priority matching
 function detectCourier(trackingId) {
     // Clean and normalize the tracking ID
-    const cleanId = trackingId.toString().trim().toUpperCase();
+    const cleanId = normalizeTrackingId(trackingId);
     
     console.log(`[Detection] Checking ID: ${cleanId}`);
     
@@ -399,9 +410,14 @@ window.addEventListener('DOMContentLoaded', () => {
             return;
         }
 
-        console.log(`[Tracking] Processing ID: ${cleanId}`);
-        const courier = detectCourier(cleanId);
-        showLoadingAndRedirect(courier, cleanId);
+        const normalizedId = normalizeTrackingId(cleanId);
+
+        console.log(`[Tracking] Processing raw ID: ${cleanId}`);
+        console.log(`[Tracking] Normalized ID: ${normalizedId}`);
+        console.log('[Tracking] Script version: 2.5');
+
+        const courier = detectCourier(normalizedId);
+        showLoadingAndRedirect(courier, normalizedId);
     };
 
     formElement.addEventListener('submit', (event) => {

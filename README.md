@@ -6,8 +6,8 @@ This service automatically detects Pakistani courier companies based on tracking
 
 | Courier | Pattern Examples |
 |---------|------------------|
-| Trax | Starts with 20xxxx |
-| PostEx | Starts with 22xxxx |
+| Trax | Starts with 20xxxx (plus non-PostEx numeric IDs) |
+| PostEx | Starts with 22xxxx / 23xxxx / 27xxxx, or PEX... |
 | Leopards (LCS) | Starts with KIxxxxx |
 | TCS | Contains TCS or 10+ digits |
 | Call Courier | Starts with CALL or CL |
