@@ -1,6 +1,6 @@
 // tracking.js
 // Smart Courier Redirector for Pakistani Couriers
-// Version: 2.2 (Fixed Trax vs PostEx detection priority)
+// Version: 2.4 (Added PostEx support for 23/27-prefix tracking IDs)
 
 // ==========================================
 // COURIER DATABASE
@@ -30,13 +30,15 @@ const COURIER_RULES = [
         name: "PostEx",
         patterns: [
             /^22\d{6,}$/,               // Starts with 22 + digits (specific PostEx format)
+            /^23\d{6,}$/,               // Starts with 23 + digits (new PostEx format)
+            /^27\d{6,}$/,               // Starts with 27 + digits (new PostEx format)
             /^POSTEX/i,                 // Contains POSTEX
             /^PEX\d{6,}$/i              // PEX + digits
             // Removed generic /^\d{10,}$/ pattern to avoid conflicts with Trax
         ],
         url: (id) => `https://postex.pk/tracking?cn=${encodeURIComponent(id)}`,
         fallbackUrl: "https://postex.pk/tracking",
-        description: "22-prefix IDs or PEX format"
+        description: "22/23/27-prefix IDs or PEX format"
     },
     {
         name: "Leopard Courier",
